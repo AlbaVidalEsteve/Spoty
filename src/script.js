@@ -14,7 +14,7 @@ if (!code) {
   // console.log(playlists);
   // const arrayIDs = populatePlaylistUI(playlists);
   const trackIDsArray = selectPlaylist(accessToken);
-  fetchTrackData(accessToken, trackIDsArray);
+  // await fetchTrackData(accessToken, trackIDsArray);
 }
 
 export async function redirectToAuthCodeFlow(clientId) {
@@ -184,17 +184,23 @@ function selectPlaylist(token){
             console.log(trackID);
             trackIDsArray.push(trackID);
           });
+          
         });
+        fetchTrackData(token, trackIDsArray)
     });
-    // console.log(trackIDsArray)
-    return trackIDsArray;
+    console.log(trackIDsArray)
+    
+    // return trackIDsArray;
     });
 };
 
 //Access track data (genre, tempo, danceblility...)
 function fetchTrackData(token, trackIDsArray) {
-  trackIDsArray.forEach((trackID) => {
-    fetch(`https://api.spotify.com/v1/tracks?ids=${trackID}`, {
+  console.log(trackIDsArray)
+  const trackIDs = trackIDsArray.join(',')
+  console.log(trackIDs)
+  trackIDsArray.map(async(trackID) => {
+    await fetch(`https://api.spotify.com/v1/tracks?ids=${trackID}`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     })
