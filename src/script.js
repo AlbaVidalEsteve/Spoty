@@ -13,8 +13,8 @@ if (!code) {
   const playlists = await fetchPlaylist(accessToken, profile);
   // console.log(playlists);
   // const arrayIDs = populatePlaylistUI(playlists);
-  const idPlaylistSeleccionadas = selectPlaylist(accessToken);
-  fetchTrackIds(accessToken, idPlaylistSeleccionadas);
+  const trackIDsArray = selectPlaylist(accessToken);
+  fetchTrackData(accessToken, trackIDsArray);
 }
 
 export async function redirectToAuthCodeFlow(clientId) {
@@ -65,9 +65,9 @@ export async function getAccessToken(clientId, code) {
   params.append("code_verifier", verifier);
 
   const result = await fetch("https://accounts.spotify.com/api/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: params
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: params,
   });
 
   const { access_token } = await result.json();
@@ -82,7 +82,6 @@ async function fetchProfile(token) {
   // console.log(result)
   return await result.json();
 }
-
 
 function populateUI(profile) {
   document.getElementById("displayName").innerText = profile.display_name;
@@ -106,29 +105,23 @@ function populateUI(profile) {
 //Buscar playlists de l'usuari
 async function fetchPlaylist(token, profile) {
   let userID = profile.id;
-  fetch(
-    `https://api.spotify.com/v1/users/${userID}/playlists`,
-    {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    }
-  )
-  
-  .then((result) => result.json())
-  .then((datos) => {
-    // console.log(datos.items)
-    // return  datos.items;
-    populatePlaylistUI(datos.items)
+  fetch(`https://api.spotify.com/v1/users/${userID}/playlists`, {
+    method: "GET",
+    headers: { Authorization: `Bearer ${token}` },
   })
-  
-  
+    .then((result) => result.json())
+    .then((datos) => {
+      // console.log(datos.items)
+      // return  datos.items;
+      populatePlaylistUI(datos.items);
+    });
 }
 
 async function populatePlaylistUI(playlists) {
   let container = document.querySelector("#playlist-container");
   // let playlistArray = playlists.items;
   // let arrayIDs = [];
-    // console.log(playlists);
+  // console.log(playlists);
   playlists.map((playlist) => {
     //Donem valor a les variables de la playlist
     let playlistID = playlist.id;
@@ -153,101 +146,60 @@ async function populatePlaylistUI(playlists) {
       playlistDiv.classList.toggle("active");
     });
   });
+  // let playlistsSeleccionadas = document.querySelectorAll(".active");
+  // let idPlaylistSeleccionadas = [];
+  // playlistsSeleccionadas.forEach((playlist) => {
+  //   idPlaylistSeleccionadas.push(playlist.id);
+  // });
+  // console.log(idPlaylistSeleccionadas);
   // console.log(arrayIDs)
   // return await arrayIDs;
 }
 
 //Boton Next
-function selectPlaylist(){
-  let button = document.querySelector(".next-btn");
-  button.addEventListener("click", () => {
-    let playlistsSeleccionadas = document.querySelectorAll('.active');
-    let idPlaylistSeleccionadas = [];
-    playlistsSeleccionadas.forEach((playlist) =>{
+function selectPlaylist(token){
+  let boton = document.querySelector('.next-btn');
+  let idPlaylistSeleccionadas = [];
+  const trackIDsArray = [];
+  // console.log(boton)
+  boton.addEventListener('click', () =>{
+    let playlistsSeleccionadas = document.querySelectorAll(".active");
+    // console.log(playlistsSeleccionadas)
+    playlistsSeleccionadas.forEach(playlist => {
       idPlaylistSeleccionadas.push(playlist.id);
-      
-
     })
-    console.log(idPlaylistSeleccionadas);
-    return idPlaylistSeleccionadas;
-  });
-}
-
-function fetchTrackIds(token, idPlaylistSeleccionadas) {
-  const trackIDsArray =[];
-  console.log(playlistID); ///continuar aqui
-  idPlaylistSeleccionadas.map(playlistID =>{
-    fetch(
-      `https://api.spotify.com/v1/playlists/${playlistID}/tracks`,
-      {
+    // console.log(idPlaylistSeleccionadas)
+    
+    idPlaylistSeleccionadas.map((playlistID) => {
+      fetch(`https://api.spotify.com/v1/playlists/${playlistID}/tracks`, {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
-      }
-    )
-      .then((response) => response.json())
-      .then((datos) =>{
-        let items = datos.items;
-        // console.log(items)
-        items.map((item) =>{
-          let trackID = item.track.id; //aconseguir ids dels tracks
-          console.log(trackID)
-          trackIDsArray.push(trackID);
-        })
       })
+        .then((response) => response.json())
+        .then((datos) => {
+          let items = datos.items;
+          // console.log(items)
+          items.map((item) => {
+            let trackID = item.track.id; //aconseguir ids dels tracks
+            console.log(trackID);
+            trackIDsArray.push(trackID);
+          });
+        });
+    });
+    // console.log(trackIDsArray)
+    return trackIDsArray;
+    });
+};
 
-  })
-  
-    console.log(trackIDsArray);
-
-    const trackIDs = trackIDsArray.join(',');
-    console.log(trackIDs);
-    // trackIDsArray.join(' ');
-
-}
 //Access track data (genre, tempo, danceblility...)
-function fetchTrackData(token, trackID){
-  fetch(
-    `https://api.spotify.com/v1/tracks?ids=${trackID}`,
-    {
+function fetchTrackData(token, trackIDsArray) {
+  trackIDsArray.forEach((trackID) => {
+    fetch(`https://api.spotify.com/v1/tracks?ids=${trackID}`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
-    }
-  )
-
-}
-
-function fetchPlaylistTracks(token, arrayIDs) {
-  // console.log(arrayIDs)
-  let arrayJSONs = [];
-  // arrayIDs.map((playlistID) => {
-  //     // console.log(playlistID)
-  //     const result = fetch(`https://api.spotify.com/v1/playlists/${playlistID}`,
-  //     {
-  //       method: "GET",
-  //       headers: { Authorization: `Bearer ${token}` },
-  //     }
-  //   );
-  //     console.log(result)
-  //     arrayJSONs.push(result)
-  //   });
-  // //   console.log(arrayJSONs)
-  // Usar map para crear un array de promesas
-  const promises = arrayIDs.map(async (playlistID) => {
-    const result = await fetch(
-      `https://api.spotify.com/v1/playlists/${playlistID}/tracks`,
-      {
-        method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
-
-    const data = await result.json();
-    arrayJSONs.push(data);
+    })
+      .then((response) => response.json())
+      .then((datos) => console.log(datos))
   });
 
-  // Esperar a que todas las promesas se resuelvan antes de continuar
-  Promise.all(promises);
-
-  // Ahora arrayJSONs debería contener la información de todas las listas de reproducción
-  console.log(arrayJSONs);
-}
+};
